@@ -24,6 +24,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -89,6 +90,7 @@ import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.Word;
 import edu.stanford.nlp.process.PTBTokenizer;
 import edu.stanford.nlp.process.Tokenizer;
+import edu.stanford.nlp.process.TokenizerFactory;
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 import facebook4j.Facebook;
 import facebook4j.FacebookException;
@@ -129,8 +131,8 @@ public class FiskController {
 	String TWITTER_MESSAGE;
 
 	@RequestMapping(value = { "/v1/adjectives", "/adjectives" }, method = RequestMethod.POST)
-	public ResponseEntity<Map<String, Integer>> posCount(@RequestBody String text) {
-		Map<String, Integer> partsOfSpeech = new HashMap<>();
+	public ResponseEntity<Map<String, List<String>>> posCount(@RequestBody String text) {
+		Map<String, List<String>> partsOfSpeech = new HashMap<>();
 		Request request = new Builder().url(
 				"https://github.com/moritzfl/jtopia-configurator/blob/master/src/main/resources/de/moritzf/jtopia/configurator/stanford-wsj-0-18-caseless-left3words-distsim.tagger?raw=true")
 				.build();
@@ -151,18 +153,31 @@ public class FiskController {
 				fos.write(bais);
 				fos.close();
 			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
+		HashSet<String> posTags = new HashSet<>();
+		Collections.addAll(posTags, "CC", "CD", "DT", "EX", "FW", "IN", "JJ", "JJR", "JJS", "LS", "MD", "NN", "NNP",
+				"NNS", "NNPS", "PDT", "POS", "PRP", "PRP$", "RB", "RBR", "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD",
+				"VBG", "VBN", "VBP", "VBZ", "WDT", "WP", "WP$", "WRB");
+		for (String s : posTags) {
+			partsOfSpeech.put(s, new ArrayList<String>());
+		}
+		
 		MaxentTagger tagger = new MaxentTagger(temp.getAbsolutePath());
 		String taggedString = tagger.tagString(text);
+		throw new RuntimeException(taggedString + " <=== taggedString!");
+	/*	while (tokenizer.hasNext()) {
+			Word w = tokenizer.next();
+			int typeInt = w.hashCode();
+			// TODO find an enum for the Penn Treebank word class and then add it to the Map
+			
+			partsOfSpeech.get(type).add(w.word());
+		} */
 
-		logger.info("===>  **TAGGED** " + taggedString + " <====");
-		return new ResponseEntity<>(partsOfSpeech, HttpStatus.ACCEPTED);
+		//return new ResponseEntity<>(partsOfSpeech, HttpStatus.ACCEPTED);
 	}
 
 	@RequestMapping(value = { "/v1/tweet/{article}", "/tweet/{article}" }, method = RequestMethod.GET)
@@ -349,7 +364,7 @@ public class FiskController {
 
 		urlBuilder = new HttpUrl.Builder();
 		urlBuilder.scheme("http").host("api.smmry.com");
-		urlBuilder.addQueryParameter("SM_API_KEY", "DEBCF9575D"); // FIXME: put into application.properties
+		urlBuilder.addQueryParameter("SM_API_KEY", "DEBCF9575D");
 		urlBuilder.addQueryParameter("SM_QUOTE_AVOID", "true");
 		urlBuilder.addQueryParameter("SM_URL", loc);
 		request = null;
