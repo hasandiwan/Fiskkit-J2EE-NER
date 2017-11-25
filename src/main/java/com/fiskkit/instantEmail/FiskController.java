@@ -80,6 +80,7 @@ import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Request.Builder;
 import com.squareup.okhttp.Response;
 
 import edu.stanford.nlp.ie.crf.CRFClassifier;
@@ -88,6 +89,7 @@ import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.Word;
 import edu.stanford.nlp.process.PTBTokenizer;
 import edu.stanford.nlp.process.Tokenizer;
+import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 import facebook4j.Facebook;
 import facebook4j.FacebookException;
 import facebook4j.FacebookFactory;
@@ -125,6 +127,43 @@ public class FiskController {
 
 	@Value("${fiskkit.tweetMessage}")
 	String TWITTER_MESSAGE;
+
+	@RequestMapping(value = { "/v1/adjectives", "/adjectives" }, method = RequestMethod.POST)
+	public ResponseEntity<Map<String, Integer>> posCount(@RequestBody String text) {
+		Map<String, Integer> partsOfSpeech = new HashMap<>();
+		Request request = new Builder().url(
+				"https://raw.githubusercontent.com/richardwilly98/test-stanford-tagger/master/models/wsj-0-18-caseless-left3words-distsim.tagger")
+				.build();
+		Response response;
+		byte[] bais = null;
+		try {
+			response = client.newCall(request).execute();
+			bais = response.body().bytes();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		File temp = null;
+		if (bais != null) {
+			try {
+				temp = File.createTempFile("wsj-0-18-caseless-left3words-distsim", ".tagger");
+				FileOutputStream fos = new FileOutputStream(temp);
+				fos.write(bais);
+				fos.close();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		MaxentTagger tagger = new MaxentTagger(temp.getAbsolutePath());
+		String taggedString = tagger.tagString(text);
+
+		logger.info("===>  **TAGGED** " + taggedString + " <====");
+		return new ResponseEntity<>(partsOfSpeech, HttpStatus.ACCEPTED);
+	}
 
 	@RequestMapping(value = { "/v1/tweet/{article}", "/tweet/{article}" }, method = RequestMethod.GET)
 	public ResponseEntity<String> tweet(@PathVariable String article, @RequestParam(name = "title") String title) {
@@ -321,6 +360,7 @@ public class FiskController {
 				e.printStackTrace();
 			}
 
+			@SuppressWarnings("unchecked")
 			@Override
 			public void onResponse(final Response resp) throws IOException {
 				if (resp.isSuccessful()) {
