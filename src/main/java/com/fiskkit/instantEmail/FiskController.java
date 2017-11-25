@@ -132,7 +132,7 @@ public class FiskController {
 	public ResponseEntity<Map<String, Integer>> posCount(@RequestBody String text) {
 		Map<String, Integer> partsOfSpeech = new HashMap<>();
 		Request request = new Builder().url(
-				"https://raw.githubusercontent.com/richardwilly98/test-stanford-tagger/master/models/wsj-0-18-caseless-left3words-distsim.tagger")
+				"https://github.com/moritzfl/jtopia-configurator/blob/master/src/main/resources/de/moritzf/jtopia/configurator/stanford-wsj-0-18-caseless-left3words-distsim.tagger?raw=true")
 				.build();
 		Response response;
 		byte[] bais = null;
