@@ -2,6 +2,7 @@ package com.fiskkit.instantEmail;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -10,7 +11,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -24,7 +28,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -75,13 +78,13 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.HashMultiset;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Request.Builder;
 import com.squareup.okhttp.Response;
 
 import edu.stanford.nlp.ie.crf.CRFClassifier;
@@ -90,8 +93,6 @@ import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.Word;
 import edu.stanford.nlp.process.PTBTokenizer;
 import edu.stanford.nlp.process.Tokenizer;
-import edu.stanford.nlp.process.TokenizerFactory;
-import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 import facebook4j.Facebook;
 import facebook4j.FacebookException;
 import facebook4j.FacebookFactory;
@@ -133,51 +134,56 @@ public class FiskController {
 	@RequestMapping(value = { "/v1/adjectives", "/adjectives" }, method = RequestMethod.POST)
 	public ResponseEntity<Map<String, List<String>>> posCount(@RequestBody String text) {
 		Map<String, List<String>> partsOfSpeech = new HashMap<>();
-		Request request = new Builder().url(
-				"https://github.com/moritzfl/jtopia-configurator/blob/master/src/main/resources/de/moritzf/jtopia/configurator/stanford-wsj-0-18-caseless-left3words-distsim.tagger?raw=true")
-				.build();
-		Response response;
-		byte[] bais = null;
+	    
+		URL url = null;
 		try {
-			response = client.newCall(request).execute();
-			bais = response.body().bytes();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			url = new URL("http://escotilla.d8u.us:5000/");
+		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		}
-		File temp = null;
-		if (bais != null) {
-			try {
-				temp = File.createTempFile("wsj-0-18-caseless-left3words-distsim", ".tagger");
-				FileOutputStream fos = new FileOutputStream(temp);
-				fos.write(bais);
-				fos.close();
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		HttpURLConnection con = null;
+		try {
+			con = (HttpURLConnection) url.openConnection();
+		} catch (IOException e3) {
+			e3.printStackTrace();
 		}
-		HashSet<String> posTags = new HashSet<>();
-		Collections.addAll(posTags, "CC", "CD", "DT", "EX", "FW", "IN", "JJ", "JJR", "JJS", "LS", "MD", "NN", "NNP",
-				"NNS", "NNPS", "PDT", "POS", "PRP", "PRP$", "RB", "RBR", "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD",
-				"VBG", "VBN", "VBP", "VBZ", "WDT", "WP", "WP$", "WRB");
-		for (String s : posTags) {
-			partsOfSpeech.put(s, new ArrayList<String>());
+		try {
+			con.setRequestMethod("POST");
+		} catch (ProtocolException e) {
+			e.printStackTrace();
 		}
-		
-		MaxentTagger tagger = new MaxentTagger(temp.getAbsolutePath());
-		String taggedString = tagger.tagString(text);
-		throw new RuntimeException(taggedString + " <=== taggedString!");
-	/*	while (tokenizer.hasNext()) {
-			Word w = tokenizer.next();
-			int typeInt = w.hashCode();
-			// TODO find an enum for the Penn Treebank word class and then add it to the Map
-			
-			partsOfSpeech.get(type).add(w.word());
-		} */
+		con.setDoOutput(true);
+		DataOutputStream out = null;
+		try {
+			out = new DataOutputStream(con.getOutputStream());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			out.writeBytes(text);
+		} catch (IOException e3) {
+			e3.printStackTrace();
+		}
+		try {
+			out.flush();
+		} catch (IOException e2) {
+			e2.printStackTrace();
+		}
+		try {
+			out.close();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		Type collectionType = new TypeToken<Map<String, List<String>>> (){}.getType();
+		try {
+			new Gson().fromJson((String) con.getContent(), collectionType);
+		} catch (JsonSyntaxException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
-		//return new ResponseEntity<>(partsOfSpeech, HttpStatus.ACCEPTED);
+		return new ResponseEntity<>(partsOfSpeech, HttpStatus.ACCEPTED);
 	}
 
 	@RequestMapping(value = { "/v1/tweet/{article}", "/tweet/{article}" }, method = RequestMethod.GET)
