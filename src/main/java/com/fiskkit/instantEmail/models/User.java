@@ -1,6 +1,8 @@
 package com.fiskkit.instantEmail.models;
 
 import java.time.LocalDateTime;
+import java.util.Calendar;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

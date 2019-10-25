@@ -5,4 +5,6 @@ import org.springframework.data.repository.CrudRepository;
 import com.fiskkit.instantEmail.models.User;
 
 public interface UserRepository extends CrudRepository<User, Long> {
+
+	User findByName(String username);
 }
