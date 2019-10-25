@@ -126,6 +126,9 @@ public class FiskController {
 	@Autowired
 	SeenRepository seenRepository;
 
+	@Autowired
+	Bot bot;
+
 	@Value("${chargebee.applicationEnvironment}")
 	String chargebeeEnvironment;
 

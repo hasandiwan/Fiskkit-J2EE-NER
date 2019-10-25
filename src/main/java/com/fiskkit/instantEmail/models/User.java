@@ -26,80 +26,121 @@ public class User {
 	@Column
 	String chargebeeId;
 
-	@Column(nullable = false) 
+	@Column(nullable = false)
 	String facebookToken;
-	
+
 	@Column(nullable = false)
 	LocalDateTime addedAt = LocalDateTime.now();
 
+	@Column
+	Date lastLogin = new Date(System.currentTimeMillis());
+
+	public Date getLastLogin() {
+
+		if (this.getLastLogin() == null) {
+			final Calendar cal = Calendar.getInstance();
+			cal.add(Calendar.MINUTE, -90);
+			this.lastLogin = cal.getTime();
+		}
+		return this.lastLogin;
+	}
+
+	public void setLastLogin(Date lastLogin) {
+
+		this.lastLogin = lastLogin;
+	}
+
+	public void setAddedAt(LocalDateTime addedAt) {
+
+		this.addedAt = addedAt;
+	}
+
+	@Column
+	Long chatId;
+
 	public LocalDateTime getAddedAt() {
-		return addedAt;
+
+		return this.addedAt;
+	}
+
+	public Long getChatId() {
+
+		return this.chatId;
+	}
+
+	public void setChatId(Long anId) {
+
+		this.chatId = anId;
 	}
 
 	public Long getId() {
-		return id;
+
+		return this.id;
 	}
 
 	public void setId(Long id) {
+
 		this.id = id;
 	}
 
 	public Integer getPhpId() {
-		return phpId;
+
+		return this.phpId;
 	}
 
 	public void setPhpId(Integer phpUserId) {
-		phpId = phpUserId;
+
+		this.phpId = phpUserId;
 	}
 
 	public String getChargebeeId() {
-		return chargebeeId;
+
+		return this.chargebeeId;
 	}
 
 	public void setChargebeeId(String chargebeeId) {
+
 		this.chargebeeId = chargebeeId;
 	}
 
 	@Override
 	public int hashCode() {
+
 		final int prime = 31;
 		int result = 1;
-		result = (prime * result) + ((phpId == null) ? 0 : phpId.hashCode());
+		result = (prime * result)
+				+ ((this.phpId == null) ? 0 : this.phpId.hashCode());
 		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (!(obj instanceof User)) {
-			return false;
-		}
+
+		if (this == obj) { return true; }
+		if (obj == null) { return false; }
+		if (!(obj instanceof User)) { return false; }
 		User other = (User) obj;
-		if (phpId == null) {
-			if (other.phpId != null) {
-				return false;
-			}
-		} else if (!phpId.equals(other.phpId)) {
-			return false;
-		}
+		if (this.phpId == null) {
+			if (other.phpId != null) { return false; }
+		} else
+			if (!this.phpId.equals(other.phpId)) { return false; }
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "[User: " + getId().toString() + " {phpId: " + getPhpId() + ", chargebeeId: " + getChargebeeId();
+
+		return "[User: " + this.getId().toString() + " {phpId: "
+				+ this.getPhpId() + ", chargebeeId: " + this.getChargebeeId();
 	}
 
 	public String getFacebookToken() {
-		return facebookToken;
+
+		return this.facebookToken;
 	}
 
 	public void setFacebookToken(String facebookToken) {
+
 		this.facebookToken = facebookToken;
 	}
 
