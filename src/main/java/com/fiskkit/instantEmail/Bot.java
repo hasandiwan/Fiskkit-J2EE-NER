@@ -26,6 +26,9 @@ public class Bot {
 	@Autowired
 	UserRepository userRepo;
 
+	public Bot() {
+	}
+
 	public void sendMessages() {
 
 		String url = "http://feeds.bbci.co.uk/news/rss.xml";
@@ -93,5 +96,4 @@ public class Bot {
 
 		return "969556564:AAFFxkfTuFd1CJLujH7rzaVlmHitymSM9PY";
 	}
-
 }
