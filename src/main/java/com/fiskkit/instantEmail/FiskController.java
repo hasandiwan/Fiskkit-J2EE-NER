@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
@@ -20,6 +21,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -72,6 +74,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.chargebee.Environment;
 import com.chargebee.models.Subscription;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fiskkit.instantEmail.models.FacebookPermissions;
 import com.fiskkit.instantEmail.models.Seen;
 import com.fiskkit.instantEmail.models.User;
@@ -137,6 +141,50 @@ public class FiskController {
 
 	@Value("${fiskkit.tweetMessage}")
 	String TWITTER_MESSAGE;
+
+	@RequestMapping(value = { "/v1/random.{extension}",
+	"/random.{extension}" }, method = RequestMethod.GET)
+	public ResponseEntity<String> random(@PathVariable String form,
+			@RequestParam Map<String, String> params) {
+
+		SecureRandom drbg = null;
+		try {
+			drbg = SecureRandom.getInstance("DRBG");
+		} catch (NoSuchAlgorithmException e1) {
+			FiskController.logger.error(e1.getMessage(), e1);
+		}
+		Long numberOfEntries = Long.valueOf(params.get("length"));
+		if (null == numberOfEntries) {
+			numberOfEntries = 10L;
+		}
+		String symbols = "ABCDEFGJKLMNPRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+		List<Map<String, Serializable>> ret = new ArrayList<>();
+		for (long cntr = 0L; cntr < numberOfEntries; cntr++) {
+			Map<String, Serializable> stanza = new HashMap<>();
+			stanza.put("int", drbg.nextInt());
+			stanza.put("long", drbg.nextLong());
+			stanza.put("float", drbg.nextFloat());
+			stanza.put("char", symbols.charAt(drbg.nextInt(symbols.length())));
+			stanza.put("boolean", drbg.nextBoolean());
+			ret.add(stanza);
+		}
+
+		if (form.toLowerCase() == "json") {
+			return new ResponseEntity<>(new Gson().toJson(ret), HttpStatus.OK);
+		}
+		if (form.toLowerCase() == "xml") {
+			XmlMapper mapper = new XmlMapper();
+			String xml = null;
+			try {
+				xml = mapper.writeValueAsString(ret);
+			} catch (JsonProcessingException e) {
+				FiskController.logger.error(e.getMessage(), e);
+			}
+			return new ResponseEntity<>(xml, HttpStatus.OK);
+		}
+		return new ResponseEntity<>(null, HttpStatus.EXPECTATION_FAILED);
+	}
 
 	@RequestMapping(value = { "/v1/adjectives",
 	"/adjectives" }, method = RequestMethod.POST)
